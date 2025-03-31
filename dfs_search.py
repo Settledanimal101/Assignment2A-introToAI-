@@ -152,7 +152,7 @@ def main():
     filename = sys.argv[1]
     method   = sys.argv[2]
 
-    # For this example, we only implement DFS.
+    # For now, dfs only
     if method.upper() != "DFS":
         print(f"Method '{method}' not implemented in this script. Only 'DFS' is supported.")
         sys.exit(1)
