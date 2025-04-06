@@ -1,0 +1,94 @@
+import sys
+import heapq
+import math
+from collections import defaultdict
+
+def parse_file(filename):
+    nodes = {}
+    edges = defaultdict(list)
+    origin = None
+    destinations = []
+
+    with open(filename, 'r') as f:
+        lines = f.readlines()
+
+    section = None
+    for line in lines:
+        line = line.strip()
+        if not line or line.startswith('#'):
+            continue
+        if line.startswith('Nodes:'):
+            section = 'nodes'
+            continue
+        elif line.startswith('Edges:'):
+            section = 'edges'
+            continue
+        elif line.startswith('Origin:'):
+            origin = int(line.split(':')[1].strip())
+            continue
+        elif line.startswith('Destinations:'):
+            destinations = list(map(int, line.split(':')[1].split(';')))
+            continue
+
+        if section == 'nodes':
+            nid, coord = line.split(':')
+            x, y = eval(coord.strip())
+            nodes[int(nid.strip())] = (x, y)
+        elif section == 'edges':
+            edge_part, cost = line.split(':')
+            from_node, to_node = eval(edge_part.strip())
+            edges[from_node].append((to_node, int(cost.strip())))
+
+    return nodes, edges, origin, destinations
+
+def heuristic(coord1, coord2):
+    return math.hypot(coord1[0] - coord2[0], coord1[1] - coord2[1])
+
+def cus2(nodes, edges, start, goals):
+    visited = set()
+    count = 0
+    frontier = []
+
+    for goal in goals:
+        heapq.heappush(frontier, (0 + heuristic(nodes[start], nodes[goal]), 0, count, start, [start]))
+
+    while frontier:
+        f_score, g_score, _, current, path = heapq.heappop(frontier)
+        count += 1
+        if current in goals:
+            return current, count, path
+
+        if current in visited:
+            continue
+        visited.add(current)
+
+        for neighbor, _ in sorted(edges[current], key=lambda x: x[0]):
+            if neighbor not in visited:
+                g_new = g_score + 1  # count steps
+                for goal in goals:
+                    h = heuristic(nodes[neighbor], nodes[goal])
+                    heapq.heappush(frontier, (g_new + h, g_new, count, neighbor, path + [neighbor]))
+
+    return None, count, []
+
+if __name__ == '__main__':
+    if len(sys.argv) != 3:
+        print("Usage: python cus2.py <filename> cus2")
+        sys.exit(1)
+
+    filename = sys.argv[1]
+    method = sys.argv[2].lower()
+
+    if method != 'cus2':
+        print("Only 'cus2' method is supported in this script.")
+        sys.exit(1)
+
+    nodes, edges, origin, destinations = parse_file(filename)
+    goal, created, path = cus2(nodes, edges, origin, destinations)
+
+    print(f"{filename} {method}")
+    if goal:
+        print(goal, created)
+        print(" -> ".join(map(str, path)))
+    else:
+        print("No path found.")
