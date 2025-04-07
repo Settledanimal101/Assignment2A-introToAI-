@@ -1,87 +1,49 @@
 import sys
-from W4_Search import Problem, astar_search
-from utils import distance
-
-#读地图  
-def load_problem(filename):
-    with open(filename, 'r') as f:
-        lines = f.read().splitlines()
-
-    coords = {}
-    graph = {}
-    origin = None
-    goals = []
-    section = None
-
-    for line in lines:
-        if line.startswith("Nodes:"):
-            section = "nodes"
-        elif line.startswith("Edges:"):
-            section = "edges"
-        elif line.startswith("Origin:"):
-            section = "origin"
-        elif line.startswith("Destinations:"):
-            section = "goals"
-        elif section == "nodes" and ":" in line:
-            node, pos = line.split(":")
-            coords[int(node.strip())] = eval(pos.strip())
-        elif section == "edges" and ":" in line:
-            edge, cost = line.split(":")
-            src, dst = eval(edge.strip())
-            graph.setdefault(src, {})[dst] = int(cost.strip())
-        elif section == "origin":
-            origin = int(line.strip())
-        elif section == "goals":
-            goals = list(map(int, line.strip().split(";")))
+from collections import deque
+import heapq
+import numpy as np
 
 
-    return coords, graph, origin, goals
+def heuristic(current_node, goal_node, coordinates):
+    # Check if the goal node exists; if not, return an error message.
+    if goal_node not in coordinates:
+        return None
+
+    current_coords = coordinates[current_node]
+    goal_coords = coordinates[goal_node]
+    
+    return np.sqrt((current_coords[0] - goal_coords[0]) ** 2 + (current_coords[1] - goal_coords[1]) ** 2)
 
 
-class MyGraphProblem(Problem):    #自定义问题类来继承框架里的 Problem
-    def __init__(self, initial, goals, graph, coords):
-        super().__init__(initial)
-        self.goals = goals
-        self.graph = graph
-        self.coords = coords
+def Astar_search(graph, origin, destinations, coordinates):
+    priority_queue = []
+    # Keep track of the total cost from the start node to the current node and the heuristic cost
+    heapq.heappush(priority_queue, (0, origin, [origin]))  # (total_cost, node, path)
+    visited = set()  # Keep track of visited nodes
+    cost_so_far = {origin: 0}  # G-cost of paths to reach each node
+    nodes_created = 0
 
-    def actions(self, state):
-        return list(self.graph.get(state, {}).keys())
+    while priority_queue:
+        total_cost, current_node, path_so_far = heapq.heappop(priority_queue)
+        nodes_created += 1
 
-    def result(self, state, action):
-        return action
+        if current_node in destinations:
+            return current_node, path_so_far, nodes_created
 
-    def goal_test(self, state):
-        return state in self.goals
+        visited.add(current_node)
 
-    def path_cost(self, cost_so_far, A, action, B):
-        return cost_so_far + self.graph[A][B]
+        for neighbor, edge_cost in graph.get(current_node, []):
+            if neighbor in visited:
+                continue  # Skip already visited nodes
 
-    def h(self, node):
-        x1, y1 = self.coords[node.state]  
-        return min(distance((x1, y1), self.coords[g]) for g in self.goals)   #用勾股定理32+42=52
+            new_cost = cost_so_far[current_node] + edge_cost  # Cost from start to this neighbor
 
-# Step 3: 主程序（命令行入口）
-if __name__ == "__main__":
-   # if len(sys.argv) != 3:
-  #      print("用法: python search.py <pathfinder> <AS>")        #NOT SURE ABOUT EXTANDE
-      #  sys.exit(1)
+            # Update cost_so_far if it's not recorded yet or if we found a cheaper way
+            if neighbor not in cost_so_far or new_cost < cost_so_far[neighbor]:
+                cost_so_far[neighbor] = new_cost
+                # Use the heuristic to guide the search
+                priority = new_cost + heuristic(neighbor, destinations[0], coordinates)
+                new_path = path_so_far + [neighbor]
+                heapq.heappush(priority_queue, (priority, neighbor, new_path))
 
-    filename = sys.argv[1]
-    method = sys.argv[2].upper()
-
-    coords, graph, origin, goals = load_problem(filename)
-
-    if method == "AS":
-        problem = MyGraphProblem(origin, goals, graph, coords)
-        result = astar_search(problem)
-
-        if result:
-            path = [node.state for node in result.path()]
-            #print(f"{filename} {method}")
-            #print(f"{result.state} {len(result.path())}")
-            print("the final path is :")
-            print("  ".join(map(str, path)))
-      #  else:              # 不确定针对此作业是否需要添加，对于无路径应该需要添加？但是只针对as十分不确定。。。。。
-           # print("No path found.")
-    # only support AS。。。。is it necessary to check if use other like gbfs /dfs...？。。。
+    return None, [], nodes_created  # If no path is found
