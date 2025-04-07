@@ -24,8 +24,8 @@ def parse_file(filename):
         line = line.strip()
 
         if not line:
-            continue  # skip empty lines
-
+            continue  
+        
         # Check if we are in a new section
         if line.startswith("Nodes:"):
             section = "nodes"
@@ -122,7 +122,7 @@ def dfs_search(graph, origin, destinations):
 
 
 def main():
-    
+
     if len(sys.argv) != 3:
         print("Usage: python dfs_search.py <filename> <method>")
         sys.exit(1)
