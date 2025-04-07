@@ -7,10 +7,12 @@ Edges:
 (1,2): 5
 (2,1): 5
 
-# no path to node 3
 
 Origin:
 1
 
 Destinations:
 3
+
+
+# no path to node 3
