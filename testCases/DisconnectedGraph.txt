@@ -15,5 +15,5 @@ Edges:
 (5,6): 6
 Origin:
 1
-Destination:
+Destinations:
 6
