@@ -15,4 +15,3 @@ Destinations:
 3
 
 
-# no path to node 3
