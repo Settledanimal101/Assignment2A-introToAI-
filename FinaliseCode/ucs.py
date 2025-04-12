@@ -15,6 +15,8 @@ def ucs_search(graph, origin, destinations):
     
     # A set to keep track of visited nodes so we don't process them again
     visited = set()
+
+    visited_order = []
     
     # Counter for the number of nodes expanded during the search
     nodes_created = 0
@@ -23,14 +25,21 @@ def ucs_search(graph, origin, destinations):
     while priority_queue:
         # Pop the node with the smallest cumulative cost from the queue
         cost, current_node, path_so_far = heapq.heappop(priority_queue)
-        nodes_created += 1  # Increment each time a node is expanded
         
+        
+        if current_node in visited:
+            continue
+
+
+        visited_order.append(current_node)
+        visited.add(current_node)
+        nodes_created += 1
+
         # Check if the current node is one of the destination nodes
         if current_node in destinations:
             return current_node, path_so_far, nodes_created
         
-        # Mark the current node as visited
-        visited.add(current_node)
+        
 
         # Loop through all neighbors of the current node from the graph
         for neighbor, edge_cost in graph.get(current_node, []):
@@ -42,6 +51,7 @@ def ucs_search(graph, origin, destinations):
                 new_path = path_so_far + [neighbor]
                 # Push the new state (cost, neighbor, new_path) to the priority queue
                 heapq.heappush(priority_queue, (new_cost, neighbor, new_path))
+                
 
     # If the priority queue is exhausted without reaching a destination, return failure
     return None, [], nodes_created
