@@ -1,35 +1,106 @@
+import sys
+import math
 import heapq
 
-def cus2(start, goals):
-    visited = set()
-    expanded = []
-    queue = []
 
-    heapq.heappush(queue, (0, start, [start]))
-    search_order = []
+def parse_file(filename):
+    with open(filename, 'r') as file:
+        lines = file.readlines()
 
-    while queue:
-        total_cost, current, path = heapq.heappop(queue)
+    nodes = {}
+    edges = {}
+    origin = None
+    goals = set()
+    section = None
 
-        if current in visited:
+    for line in lines:
+        line = line.strip()
+        if not line or line.startswith("#"):
             continue
 
-        visited.add(current)
-        expanded.append(current)
-        search_order.append(current)
+        if line.startswith("Nodes:"):
+            section = "nodes"
+            continue
+        elif line.startswith("Edges:"):
+            section = "edges"
+            continue
+        elif line.startswith("Origin:"):
+            origin = int(line.split(":")[1].strip())
+            continue
+        elif line.startswith("Destinations:"):
+            goals = set(map(int, line.split(":")[1].strip().split(";")))
+            continue
+
+        if section == "nodes":
+            node_id, coord = line.split(":")
+            x, y = map(int, coord.strip("() ").split(","))
+            nodes[int(node_id.strip())] = (x, y)
+        elif section == "edges":
+            from_to, cost = line.split(":")
+            from_node, to_node = map(int, from_to.strip("() ").split(","))
+            cost = int(cost)
+            if from_node not in edges:
+                edges[from_node] = []
+            edges[from_node].append((to_node, cost))  # 有向边，只从 from_node 到 to_node
+
+    return nodes, edges, origin, goals
+
+
+def heuristic(node, goals, coordinates):
+    x1, y1 = coordinates[node]
+    return min(math.hypot(x1 - coordinates[g][0], y1 - coordinates[g][1]) for g in goals)
+
+
+def cus2(nodes, edges, origin, goals, weight=1.5):
+    visited_set = set()
+    queue = []
+
+    h = heuristic(origin, goals, nodes)
+    heapq.heappush(queue, (h * weight, 0, origin, [origin]))  # f(n), g(n), node, path
+
+    while queue:
+        f, g, current, path = heapq.heappop(queue)
+
+        if current in visited_set:
+            continue
+        visited_set.add(current)
 
         if current in goals:
-            print("CUS2 Goal Reached:", current)
-            print("Expanded Nodes:", expanded)
-            print("Search Order:", search_order)
-            print("Path:", path)
-            print("Total Cost:", total_cost)
-            return path, total_cost
+            return current, len(visited_set), path
 
-        neighbors = sorted(graph.get(current, []), key=lambda x: x[0])
+      
+        neighbors = sorted(edges.get(current, []), key=lambda x: x[0])
         for neighbor, cost in neighbors:
-            if neighbor not in visited:
-                heapq.heappush(queue, (total_cost + cost, neighbor, path + [neighbor]))
+            if neighbor not in visited_set:
+                g_new = g + cost
+                h_new = heuristic(neighbor, goals, nodes)
+                f_new = g_new + weight * h_new
+                heapq.heappush(queue, (f_new, g_new, neighbor, path + [neighbor]))
 
-    print("CUS2: No path found.")
-    return None, float('inf')
+    return None, len(visited_set), []
+
+
+def main():
+    if len(sys.argv) != 3:
+        print("Usage: python search.py <filename> CUS2")
+        return
+
+    filename = sys.argv[1]
+    method = sys.argv[2].upper()
+
+    if method != "CUS2":
+        print("This script only supports the CUS2 method.")
+        return
+
+    nodes, edges, origin, goals = parse_file(filename)
+    goal, count, path = cus2(nodes, edges, origin, goals)
+
+    if path:
+        print(f"{filename} {method} {goal} {count}")
+        print(" ".join(map(str, path)))
+    else:
+        print(f"{filename} {method} -1 {count}")
+        print("No path found.")
+
+if __name__ == "__main__":
+    main()
