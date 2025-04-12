@@ -1,14 +1,7 @@
 import heapq
 
 def ucs_search(graph, origin, destinations):
-    """
-    Perform Uniform Cost Search (UCS) on a weighted graph to find the least-cost
-    path from the origin to one of the destination nodes.
-    
-    UCS is an uninformed search algorithm that expands the node with the lowest 
-    cumulative cost first. This implementation uses a priority queue (min-heap) 
-    to always select the node with the smallest cost.
-    """
+
      # Initialize the priority queue with a tuple (cumulative_cost, current_node, path_so_far)
     # Start with the origin node and a cumulative cost of 0.
     priority_queue = [(0, origin, [origin])]
