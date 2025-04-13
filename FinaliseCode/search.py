@@ -40,6 +40,7 @@ def main():
         sys.exit(1)
 
     if goal:
+        print(f"{method}")
         print(f"{goal} {nodes_created}")
         print(" ".join(path))
     else:
