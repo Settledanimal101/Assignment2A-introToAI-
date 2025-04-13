@@ -1,44 +1,49 @@
 from collections import deque
 
 def bfs_search(graph, origin, destinations):
-    # Initialize a set of visited nodes and a queue for BFS
-    visited = set([origin])
-    queue = deque([origin])
+    """
+    Performs Breadth-First Search to find the shortest unweighted path from origin to any destination.
     
-    # Dictionary to trace parents for path reconstruction
-    parent = {origin: None}
+    Args:
+        graph (dict): Adjacency list representation where each key maps to list of (neighbor, cost) tuples
+        origin (str): Starting node ID
+        destinations (list): List of goal node IDs
     
-    # Counter to track the number of nodes expanded during the search
-    nodes_created = 0
+    Returns:
+        tuple: (destination_reached, path, nodes_expanded) where:
+            - destination_reached: First destination found or None if no path exists
+            - path: List of nodes in order from origin to destination
+            - nodes_expanded: Number of nodes explored during search
+    """
+    # Initialize data structures for BFS
+    visited = set([origin])      # Track visited nodes to avoid cycles
+    queue = deque([origin])      # FIFO queue for BFS node expansion
+    parent = {origin: None}      # Store parent pointers for path reconstruction
+    nodes_created = 0            # Counter for performance tracking
 
-    # Continue processing until the queue is empty (i.e., all reachable nodes are explored)
     while queue:
-        # Dequeue the node at the front of the queue
+        # Get next node from front of queue (FIFO order ensures shortest path)
         current = queue.popleft()
         nodes_created += 1
 
-        # If the current node is in the set of destination nodes,
-        # reconstruct the path from origin to the current node.
+        # Check if we've reached any destination
         if current in destinations:
+            # Reconstruct path by following parent pointers backwards
             path = []
             temp = current
-            # Trace back using parent pointers
             while temp is not None:
                 path.append(temp)
                 temp = parent[temp]
-            path.reverse()  # Reverse the path to get the correct order from origin to destination
+            path.reverse()  # Convert from destination->origin to origin->destination
             return current, path, nodes_created
 
-        # Explore neighbors in sorted order based on node value (converted to integer)
-        # Note: The cost value is ignored for BFS.
+        # Process all unvisited neighbors
+        # Sort neighbors by ID for consistent tie-breaking
         for neighbor, _ in sorted(graph.get(current, []), key=lambda x: int(x[0])):
             if neighbor not in visited:
-                # Mark neighbor as visited to prevent revisiting
-                visited.add(neighbor)
-                # Set the current node as the parent of the neighbor (for path reconstruction)
-                parent[neighbor] = current
-                # Enqueue the neighbor
-                queue.append(neighbor)
+                visited.add(neighbor)          # Mark as visited
+                parent[neighbor] = current     # Record how we reached this node
+                queue.append(neighbor)         # Add to queue for later expansion
 
-    # If the queue is exhausted and no destination is found, return failure result
+    # No path found to any destination
     return None, [], nodes_created
